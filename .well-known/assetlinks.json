@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.app_1cuptea33.twa",
+        "sha256_cert_fingerprints": ["D6:E4:0F:3B:D5:00:A4:58:48:A1:E8:A1:34:F8:80:EB:25:86:53:4E:EE:D7:5D:90:CC:88:66:55:53:BA:F4:48"]
+      }
+    }]
