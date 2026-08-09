@@ -22,6 +22,10 @@
     --line:#E3DAC3;
     --shadow:0 2px 10px rgba(14,42,32,0.08);
   }
+  body.dark{
+  --paper:#14201A; --paper-2:#1B2A22; --ink:#EDE7D6; --muted:#8CA093;
+  --line:#2C3D33; --bg-deep:#0A1712; --bg-deep-2:#0E2018;
+}
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
@@ -211,6 +215,7 @@
     <div class="brand-text">
       <h1>মুহাসাবা</h1>
       <p>দৈনিক আমলের হিসাব</p>
+      <p id="streakText" style="margin-top:2px;"></p>
     </div>
   </div>
   <div class="datebar">
@@ -225,6 +230,7 @@
     </div>
     <button class="todaybtn" id="todayBtn">আজ</button>
     <button class="report-btn" id="reportBtn">রিপোর্ট</button>
+    <button class="todaybtn" id="darkBtn">🌙</button>
     <div class="ring-wrap">
       <svg width="52" height="52">
         <circle cx="26" cy="26" r="22" stroke="rgba(255,255,255,0.15)" stroke-width="5" fill="none"/>
@@ -260,6 +266,7 @@
 
 <div class="savebar">
   <div class="save-status" id="saveStatus">প্রস্তুত</div>
+  <div class="expand-all" id="exportBtn" style="margin-right:6px;">এক্সপোর্ট</div>
   <div class="expand-all" id="expandAll">সব খুলুন</div>
 </div>
 
@@ -578,6 +585,7 @@ function renderMain(){
       const chk = document.createElement("div");
       chk.className = "chk" + (checked ? " on":"");
       chk.onclick = ()=>{
+      if(navigator.vibrate) navigator.vibrate(12);
         if(dayState.checked[it.id]) delete dayState.checked[it.id];
         else dayState.checked[it.id] = true;
         scheduleSave();
@@ -629,8 +637,26 @@ function renderMain(){
   notesBox.appendChild(ta);
   main.appendChild(notesBox);
 }
+function renderStreak(){
+  let streak = 0;
+  let d = new Date();
+  while(true){
+    const raw = localStorage.getItem(keyFor(d));
+    if(!raw) break;
+    try{
+      const val = JSON.parse(raw);
+      const hasAny = val.checked && Object.keys(val.checked).length > 0;
+      if(!hasAny) break;
+    }catch(e){ break; }
+    streak++;
+    d.setDate(d.getDate()-1);
+  }
+  const el = document.getElementById("streakText");
+  if(el) el.textContent = streak > 0 ? `🔥 ${toBn(streak)} দিনের ধারাবাহিকতা` : "দৈনিক আমলের হিসাব";
+}
 
 function renderAll(){
+  renderStreak();
   renderDateBar();
   renderTabs();
   renderMain();
@@ -651,6 +677,12 @@ document.getElementById("nextDay").onclick = ()=>{
 };
 document.getElementById("todayBtn").onclick = ()=>{ goToDate(new Date()); };
 document.getElementById("expandAll").onclick = ()=>{
+const darkBtn = document.getElementById("darkBtn");
+if(localStorage.getItem("muhasaba-dark")==="1") document.body.classList.add("dark");
+darkBtn.onclick = ()=>{
+  document.body.classList.toggle("dark");
+  localStorage.setItem("muhasaba-dark", document.body.classList.contains("dark") ? "1":"0");
+};
   const cats = DATA[currentTab].categories;
   const anyClosed = cats.some(c => !openCats[c.id]);
   cats.forEach(c => openCats[c.id] = anyClosed);
@@ -744,6 +776,20 @@ document.querySelectorAll(".range-btn").forEach(btn=>{
     buildReport(parseInt(btn.dataset.days));
   };
 });
+document.getElementById("exportBtn").onclick = ()=>{
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith("muhasaba:")) data[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `muhasaba-backup-${fmtDate(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 </script>
 </body>
 </html>
