@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>মুহাসাবা — দৈনিক আমল ট্র্যাকার</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0E2A20;
+    --bg-deep-2:#123626;
+    --paper:#FBF6EA;
+    --paper-2:#F3ECDA;
+    --gold:#C79A3D;
+    --gold-soft:#E3C888;
+    --ink:#1E2621;
+    --muted:#6E7A70;
+    --muted-2:#9AA79C;
+    --check:#2F6B4F;
+    --line:#E3DAC3;
+    --shadow:0 2px 10px rgba(14,42,32,0.08);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Hind Siliguri', sans-serif;
+    min-height:100vh;
+    padding-bottom:120px;
+  }
+  h1,h2,h3,.serif{font-family:'Noto Serif Bengali', serif;}
+
+  /* Header */
+  header{
+    background:linear-gradient(180deg, var(--bg-deep), var(--bg-deep-2));
+    color:var(--paper);
+    padding:18px 16px 14px;
+    position:sticky; top:0; z-index:20;
+    box-shadow:0 4px 16px rgba(0,0,0,0.18);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .crescent{
+    width:26px;height:26px; position:relative; flex-shrink:0;
+  }
+  .crescent::before{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    background:var(--gold-soft);
+    box-shadow: 7px 1px 0 -2px var(--bg-deep) inset;
+  }
+  .brand-text h1{font-size:19px; margin:0; font-weight:700; letter-spacing:.2px;}
+  .brand-text p{margin:1px 0 0; font-size:11.5px; color:var(--gold-soft); font-weight:500;}
+
+  .datebar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .date-nav{display:flex; align-items:center; gap:6px;}
+  .navbtn{
+    width:34px;height:34px; border-radius:50%; border:1px solid rgba(255,255,255,0.18);
+    background:rgba(255,255,255,0.06); color:var(--paper); font-size:16px;
+    display:flex;align-items:center;justify-content:center; cursor:pointer;
+  }
+  .navbtn:active{background:rgba(255,255,255,0.16);}
+  .date-label{text-align:center; min-width:150px;}
+  .date-label .d1{font-size:14.5px; font-weight:600;}
+  .date-label .d2{font-size:11px; color:var(--muted-2); margin-top:1px;}
+  .date-label .d3{font-size:11px; color:var(--gold-soft); margin-top:2px; direction:rtl;}
+  .todaybtn{
+    font-size:11.5px; padding:5px 10px; border-radius:20px; border:1px solid var(--gold);
+    color:var(--gold-soft); background:transparent; cursor:pointer;
+  }
+
+  .ring-wrap{position:relative; width:52px; height:52px; flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-pct{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:var(--gold-soft); font-family:'Noto Serif Bengali',serif;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex; gap:6px; padding:10px 12px 0; background:var(--paper);
+    position:sticky; top:96px; z-index:19; border-bottom:1px solid var(--line);
+  }
+  .tab{
+    flex:1; text-align:center; padding:10px 4px 12px; font-size:13.5px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; position:relative;
+  }
+  .tab.active{color:var(--bg-deep); border-bottom-color:var(--gold);}
+  .tab .badge{
+    display:block; font-size:10.5px; font-weight:500; color:var(--muted-2); margin-top:2px;
+  }
+  .tab.active .badge{color:var(--gold-dark, #9C7526);}
+
+  main{padding:14px 12px 10px; max-width:640px; margin:0 auto;}
+
+  .category{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:14px;
+    margin-bottom:12px; overflow:hidden;
+  }
+  .cat-head{
+    display:flex; align-items:center; justify-content:space-between; padding:13px 14px;
+    cursor:pointer; user-select:none;
+  }
+  .cat-head h3{margin:0; font-size:15px; font-weight:600; color:var(--bg-deep);}
+  .cat-meta{display:flex; align-items:center; gap:8px;}
+  .cat-count{font-size:11.5px; color:var(--muted); font-weight:600;}
+  .chev{transition:transform .2s ease; color:var(--muted); font-size:12px;}
+  .category.open .chev{transform:rotate(180deg);}
+  .cat-body{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+  }
+  .category.open .cat-body{max-height:4000px;}
+  .cat-inner{padding:0 12px 10px;}
+
+  .item{
+    display:flex; align-items:flex-start; gap:10px; padding:9px 4px;
+    border-top:1px solid var(--line);
+  }
+  .cat-inner .item:first-child{border-top:none;}
+  .chk{
+    width:21px;height:21px; border-radius:6px; border:2px solid var(--muted-2);
+    flex-shrink:0; margin-top:1px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    background:#fff; transition:.15s;
+  }
+  .chk.on{background:var(--check); border-color:var(--check);}
+  .chk.on::after{content:"✓"; color:#fff; font-size:13px; font-weight:700;}
+  .item-text{flex:1;}
+  .item-q{font-size:14px; line-height:1.55; cursor:pointer;}
+  .item.done .item-q{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--muted-2);}
+  .item-detail{
+    font-size:12.5px; color:var(--muted); line-height:1.6; margin-top:5px;
+    background:#fff; border-left:2px solid var(--gold); padding:7px 9px; border-radius:6px;
+    display:none;
+  }
+  .item-detail.show{display:block;}
+  .detail-toggle{
+    font-size:11px; color:var(--gold-dark,#9C7526); margin-top:3px; cursor:pointer; display:inline-block;
+  }
+
+  .notes-box{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-top:4px;
+  }
+  .notes-box h3{margin:0 0 8px; font-size:14.5px; color:var(--bg-deep);}
+  textarea{
+    width:100%; min-height:80px; border:1px solid var(--line); border-radius:10px; padding:10px;
+    font-family:'Hind Siliguri', sans-serif; font-size:13.5px; resize:vertical; background:#fff; color:var(--ink);
+  }
+  textarea:focus{outline:1.5px solid var(--gold);}
+
+  .savebar{
+    position:fixed; bottom:0; left:0; right:0; background:var(--paper);
+    border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; justify-content:space-between; gap:10px; z-index:25;
+  }
+  .save-status{font-size:12px; color:var(--muted);}
+  .save-status.ok{color:var(--check);}
+  .expand-all{
+    font-size:12px; color:var(--bg-deep); background:#fff; border:1px solid var(--line);
+    padding:8px 12px; border-radius:20px; cursor:pointer; font-weight:600;
+  }
+
+  .loading{padding:40px 10px; text-align:center; color:var(--muted); font-size:13px;}
+  ::selection{background:var(--gold-soft);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="crescent"></div>
+    <div class="brand-text">
+      <h1>মুহাসাবা</h1>
+      <p>দৈনিক আমলের হিসাব</p>
+    </div>
+  </div>
+  <div class="datebar">
+    <div class="date-nav">
+      <div class="navbtn" id="prevDay">‹</div>
+      <div class="date-label">
+        <div class="d1" id="dateD1">—</div>
+        <div class="d2" id="dateD2">—</div>
+        <div class="d3" id="dateD3">—</div>
+      </div>
+      <div class="navbtn" id="nextDay">›</div>
+    </div>
+    <button class="todaybtn" id="todayBtn">আজ</button>
+    <div class="ring-wrap">
+      <svg width="52" height="52">
+        <circle cx="26" cy="26" r="22" stroke="rgba(255,255,255,0.15)" stroke-width="5" fill="none"/>
+        <circle id="ringFg" cx="26" cy="26" r="22" stroke="#C79A3D" stroke-width="5" fill="none"
+          stroke-dasharray="138.2" stroke-dashoffset="138.2" stroke-linecap="round"/>
+      </svg>
+      <div class="ring-pct" id="ringPct">০%</div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<main id="main">
+  <div class="loading">লোড হচ্ছে…</div>
+</main>
+
+<div class="savebar">
+  <div class="save-status" id="saveStatus">প্রস্তুত</div>
+  <div class="expand-all" id="expandAll">সব খুলুন</div>
+</div>
+
+<script>
+// ---------- Data ----------
+const DATA = {
+  daily: {
+    label: "দৈনিক",
+    categories: [
+      { id:"de", title:"বাহ্যিক আমল", items:[
+        {id:"de1", q:"অর্থ বুঝে কুরআন তিলাওয়াত (কমপক্ষে আধা পারা)"},
+        {id:"de2", q:"আযানের উত্তর ও আযানের পরের দোয়া"},
+        {id:"de3", q:"ফজরের নামায (জামাতে / আউয়াল ওয়াক্তে)"},
+        {id:"de4", q:"যোহরের নামায"},
+        {id:"de5", q:"আসরের নামায"},
+        {id:"de6", q:"মাগরিবের নামায"},
+        {id:"de7", q:"ইশার নামায"},
+        {id:"de8", q:"সুন্নাহ — ২ রাকাত ফজরের পূর্বে"},
+        {id:"de9", q:"সুন্নাহ — ৪ রাকাত যোহরের পূর্বে"},
+        {id:"de10", q:"সুন্নাহ — ২ রাকাত যোহরের পর"},
+        {id:"de11", q:"সুন্নাহ — ২ রাকাত মাগরিবের পর"},
+        {id:"de12", q:"সুন্নাহ — ২ রাকাত ইশার পর"},
+        {id:"de13", q:"বিতরের নামায"},
+        {id:"de14", q:"চাশতের নামায (২ রাকাত)"},
+        {id:"de15", q:"সকালের আযকার"},
+        {id:"de16", q:"সন্ধ্যার আযকার"},
+        {id:"de17", q:"পাঁচ ওয়াক্ত ফরয নামায পরবর্তী আযকার"},
+        {id:"de18", q:"মিসওয়াক ব্যবহার"},
+        {id:"de19", q:"হাত তুলে দোয়া (কমপক্ষে ১০ মিনিট)"},
+        {id:"de20", q:"তাহাজ্জুদের নামায"},
+        {id:"de21", q:"অন্যান্য নফল নামায"},
+        {id:"de22", q:"ব্যায়াম"},
+        {id:"de23", q:"ঘুমের আগে সূরা আস-সাজদা ও সূরা মুলক তিলাওয়াত"},
+      ]},
+      { id:"ds", title:"আত্মিক মুহাসাবা", items:[
+        {id:"ds1", q:"আমার নফসের তাযকিয়া-আত্মশুদ্ধি এবং নিজের সকল দূর্বলতা দূর করে দেয়ার জন্য আমি কি আল্লাহর কাছে সাহায্য কামনা করেছি?",
+          detail:"اللَّهُمَّ لا سَهْلَ إِلا مَا جَعَلْتَهُ سَهْلا، وَأَنْتَ تَجْعَلُ الْحَزْنَ سَهْلا إِذَا شِئْتَ — হে আল্লাহ! আপনি যা সহজ করে দেন তা ছাড়া কোনও কিছুই সহজ নয়। আপনি ইচ্ছা করলে কঠিন কাজকেও সহজ করে দিতে পারেন। এ দোয়াটি কি বারবার পড়া হয়েছে? আল্লাহর সাহায্য ছাড়া নিজের শক্তিতে আমরা কিছুই করতে পারবো না।"},
+        {id:"ds2", q:"আমি কি আমার দ্বীনি-দুনিয়াবী সকল বিষয়ে (ব্যক্তিগত, পারিবারিক ও তানজিমের বিভিন্ন কাজ-প্রজেক্ট, আর্থিক বিষয় এমনকি নিজের নফসের তাযকিয়াসহ সকল বিষয়ে) নিজেকে অক্ষম এবং সম্পূর্ণরূপে আল্লাহর মুখাপেক্ষী মনে করেছি?"},
+        {id:"ds3", q:"আমি কি নফস ও শয়তানের অনিষ্ট থেকে মহান আল্লাহর কাছে বেশি বেশি আশ্রয় কামনা করেছি? কারণ,আল্লাহর অনুগ্রহে নফস ও শয়তানের অনিষ্ট থেকে নিরাপদ থাকতে পারলে, নফসের তাযকিয়া অনেকটাই সহজ হয়ে যাবে ইনশাআল্লাহ",
+          detail:"আউযুবিল্লাহি মিনাশ শাইতানির রাজিম, আল্লাহুম্মা ইন্নি আউযুবিকা মিন শাররি নাফসি।"},
+        {id:"ds4", q:"আমি কি অসৎ চরিত্র, বদ আমল ও কুপ্রবৃত্তি থেকে আল্লাহর কাছে আশ্রয় কামনা করেছি?",
+          detail:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ مُنْكَرَاتِ الْأَخْلَاقِ وَالْأَعْمَالِ وَالْأَهْوَاءِ — হে আল্লাহ! আমি আপনার কাছে অসৎ চরিত্র, বদ আমল ও কুপ্রবৃত্তি থেকে আশ্রয় কামনা করি।"},
+        {id:"ds5", q:"কারো উপর রাগ বা অভিমান থাকলে তাকে সহ সকল মুমিনকে ক্ষমাসুন্দর দৃষ্টিতে স্মরণ করে, তাদের সবার কল্যাণের জন্য দোয়া করেছি তো?"},
+        {id:"ds6", q:"আমি সম্মুখ ময়দানের মুজাহিদিনের জন্য দোয়া করেছি তো? আমার মজলুম-বন্দি ও শহীদ ভাই-বোনদের জন্য দোয়া করেছি তো? নিজ আনসার ভাইয়ের জন্য (এটি শুধু হাইডআউটে থাকা ভাইদের জন্য) এবং নিজের মা-বাবা ও সন্তানদের জন্য দোয়া করেছি তো? "},
+        {id:"ds7", q:"আমি কি মৃত্যুর কথা স্মরণ করেছি? মৃত্যুকে আমি ঘৃণা করি? না, পছন্দ করি? আমি কি ফেরেশতাদের সঙ্গে সাক্ষাতের জন্য প্রস্তুত? আমি কি আমার মৃত আত্মীয়-স্বজনের সঙ্গে সাক্ষাতের জন্য প্রস্তুত? আমি কি কবরের জীবনের জন্য প্রস্তুত? যদি জানতাম, সাত দিন পরে মারা যাব, তাহলে এই সাত দিনে কী কী আমল করতাম? আলাদা কিছু সময় নিয়ে এ বিষয়গুলো ভেবেছি কি?"},
+        {id:"ds8", q:"আমি কি মৃত্যুর পরের জীবনের জন্য বিশেষভাবে দোয়া করেছি? আমি কি আল্লাহর ভয়ে চোখের পানি ফেলেছি?"},
+        {id:"ds9", q:"আমি দুনিয়াতে মানুষের তৈরি কষ্ট, লাঞ্ছনা, কঠিন জীবন, একাকীত্ব, বন্দিত্ব ও হাইড আউট লাইফের কষ্টকে পরকালের শাস্তির তুলনায় খুবই নগণ্য মনে করছি তো?"},
+        {id:"ds10", q:"আমি কি আমার সকল আমলে আল্লাহ আমাকে দেখছেন বা আমি আল্লাহকে দেখছি, এ গুণের (ইহসানের গুণের) অভাব পূরণের ফিকির করেছি? (إحسان) এ গুণ অর্জনের উপায় এবং নামাযে খুশু-খুজু লাভের উপায় সম্পর্কে কোনো বই বা প্রবন্ধ কি আমি পড়েছি? এই গুন অর্জনের জন্য আল্লাহর কাছে দোয়া করেছি কি?"},
+        {id:"ds11", q:"আমি কি সকল বিষয়ে সত্য বলা, মিথ্যা ও অতিরঞ্জন থেকে বেঁচে থাকা এবং কম কথা বলার চেষ্টা করেছি?"},
+        {id:"ds12", q:"এক বা একাধিক এমন কোনো গোপন নেক আমল (الخبيئة الصالحة) কি আমি করেছি যা সম্পর্কে একমাত্র আল্লাহ ছাড়া অন্য কেউ জানে না, যার ওসিলায় আমি দুনিয়া ও আখেরাতের বিপদ-আপদ থেকে নাজাতের আশা করতে পারি?"},
+        {id:"ds13", q:"আমি কি মসজিদে গিয়ে জামাতের সাথে নামায আদায় করেছি অথবা (বিশেষ কারণে যেমন, বিভিন্ন দাওরা বা মাশওয়ারার সময় কিংবা কোনো হাইড আউট ভাইয়ের জন্য এটি সম্ভব না হলে অন্তত) আযানের আগেই প্রস্তুতি নিয়ে আযানের সাথে সাথে আউয়াল ওয়াক্তে নামায আদায় করেছি?"},
+        {id:"ds14", q:"মনে কোনো খারাপ চিন্তা এলে বা কারো দোষ-ত্রুটি (عيوب الناس) সংক্রান্ত কোনো কথা এলে আমি কি সঙ্গে সঙ্গে আল্লাহর কাছে আশ্রয় কামনা করেছি? নাকি ওসবের মধ্যেই ডুবে রয়েছি?"},
+        {id:"ds15", q:"বাইরে চলাফেরা করার সময় এবং ইন্টারনেটে কাজ করার সময় আমি নিজের নজরকে সব ধরনের খেয়ানত থেকে হেফাযত করেছি তো? নেটে অশ্লীল বিজ্ঞাপন বন্ধ করার জন্য পর্যাপ্ত ব্যবস্থা নিয়েছি তো? "},
+        {id:"ds16", q:"এমন কোনো গোপন গুনাহ (ذنوب الخلوات) কি আমার থেকে হয়েছে যা সম্পর্কে একমাত্র আল্লাহ ছাড়া অন্য কেউ জানে না? হয়ে থাকলে আমি কি তা থেকে তাওবা করে তার বিপরীতে একাধিক গোপন নেক আমল (الخبيئة الصالحة) করে নিয়েছি?"},
+      ]},
+    ]
+  },
+  alt: {
+    label: "একদিন পর পর",
+    categories: [
+      { id:"s1a", title:"১মঃ অহংকার দূরীকরণ", items:[
+        {id:"s1a1", q:"আমি কি নিজেকে অন্য সবার চেয়ে বা নির্দিষ্ট কোনো ভাইয়ের চেয়ে বা কারো ওপর রাগ করে থাকলে তার চেয়ে উত্তম মনে করি?"},
+        {id:"s1a2", q:"আমি কি (আমার ব্যক্তিগত, দলীয় এবং অন্যান্য সকল বিষয়ে) যা হক ও সত্য তা গ্রহণ করতে প্রস্তুত আছি? (অহংকারের কারণেই মানুষ সত্য গ্রহণ করা থেকে বিরত থাকে)", detail:"اللَّهُمَّ أَرِنَا الْحَقَّ حَقًّا وَارْزُقْنَا اتِّبَاعَهُ، وَأَرِنَا الْبَاطِلَ بَاطِلًا وَارْزُقْنَا اجْتِنَابَهُ হে আল্লাহ! আমাদের কাছে হককে হক হিসেবে দেখান এবং তা অনুসরণ করার তাওফীক দিন আর বাতিলকে বাতিল হিসেবে দেখান এবং তা থেকে বেঁচে থাকার তাওফীক দিন"},
+        {id:"s1a3", q:"আমি কি অন্যদের কাছ থেকে সম্মান পেতে চাই? কারো কথায় আদবের একটু খেলাফ হলে আমার মধ্যে কি রাগ চলে আসে? (এটি অন্তরে অহংকার থাকার লক্ষণ)"},
+        {id:"s1a4", q:"আমি কি আমার পরিবার, মামুর, মাসউল বা অন্যান্য মুসলমানদের সাথে কঠোরভাবে কথা বলি? (এটি অহংকারের লক্ষণ) আমি কি সকল পরিস্থিতিতে সবার সাথে নম্র আচরণ করি?"},
+        {id:"s1a5", q:"কেউ আমাকে কোনো নির্দেশ দিলে আমার মধ্যে কি রাগ চলে আসে? (এটি অহংকারের লক্ষণ) আমি নিজেকে সকল মুসলিম ও দ্বীনি ভাইদের খাদেম মনে করি তো?"},
+        {id:"s1a6", q:"আমি কি কোনো মুসলিমকে, বিশেষভাবে কোনো দ্বীনি ভাইকে অবজ্ঞা করি? (এটি অহংকারের লক্ষণ) ফিতনার এই যুগে জিহাদে শরীক প্রতিটি ভাই একেকটি সম্পদ, কোনো ভাইকে ছোট মনে করা মস্তবড় অন্যায়।"},
+        {id:"s1a7", q:"ইলম-আমল, বংশীয় মর্যাদা, সৌন্দর্য্য, নেতৃত্ব ও ক্ষমতা ইত্যাদির কারণে আমার মধ্যে কি অহংকার চলে এসেছে? (এগুলো তো একমাত্র আল্লাহরই দান, আল্লাহ চাইলে যেকোনো সময় সবই ছিনিয়ে নিতে পারেন।)"},
+        {id:"s1a8", q:"অহংকার আল্লাহর চাদর। একমাত্র তিনিই শ্রেষ্ঠ, আমি তো হলাম মিসকিন। কবরে আমি পঁচে গলে শেষ হয়ে যাবো। দুনিয়ার এই অর্থ-সম্পদ, বংশীয় মর্যাদা, সৌন্দর্য্য, নেতৃত্ব ও ক্ষমতা, কোনো কিছুই থাকবে না। একথাগুলো কি আমি স্মরণ করেছি?"},
+        {id:"s1a9", q:"আমার মধ্যে অহংকার থাকলে, আমি কি এর চিকিৎসা নিয়েছি? এর জন্য কি প্রয়োজনে কোনো হক্কানী আলেমের স্মরণাপন্ন হয়েছি?"},
+        {id:"s1a10", q:"আমি কি নিজেকে নির্ভুল বা পারফ্যাক্ট (সকল বিষয়ে একশ তে একশ) মনে করি? ছোট বড় সবার কাছ থেকে উপদেশ নেওয়ার জন্য আমি তৈরি আছি তো? কারো থেকে উপদেশ নিতে কোনো ধরনের অনিহা নিই তো? (مظاهر الكبر) (অহংকারের নিদর্শন)"},
+        {id:"s1a11", q:"আমি কি অন্যের সম্মানের জন্য কথা-বার্তা, আচার আচরণ ইত্যাদিতে নিজেকে ছোট করেছি? (أَذِلَّةٍ عَلَى الْمُؤْمِنِينَ)"},
+      ]},
+      { id:"s1l", title:"১মঃ আল্লাহর প্রতি মহব্বত", items:[
+        {id:"s1l1", q:"আল্লাহর প্রতি ভালোবাসা বাড়ানোর দোয়াটি পড়েছি তো?",
+          detail:"اللَّهُمَّ إِنِّي أَسْأَلُكَ حُبَّكَ وَحُبَّ مَنْ يُحِبُّكَ وَالْعَمَلَ الَّذِي يُبَلِّغُنِي حُبَّكَ، اللَّهُمَّ اجْعَلْ حُبَّكَ أَحَبَّ إِلَيَّ مِنْ نَفْسِي وَأَهْلِي وَمِنَ الْمَاءِ الْبَارِدِ - হে আল্লাহ! আমি আপনার কাছে আপনার ভালোবাসা এবং আপনাকে ভালোবাসেন এমন ব্যক্তিদের ভালোবাসা কামনা করি এবং এমন আমলের তাওফীক কামনা করি যার মাধ্যমে আমি আপনার ভালোবাসা লাভ করতে পারবো। হে আল্লাহ! আমার কাছে আপনার ভালোবাসাকে আমার নিজের স্বত্বা, আমার পরিবার পরিজন ও (প্রচন্ড পিপাসার সময়) ঠাণ্ডা পানির ভালোবাসা থেকেও অধিক প্রবল করে দিন"},
+        {id:"s1l2", q:"আমি কি আল্লাহর নাম ও গুণাবলীর তালিকা থেকে কিছু নাম ও গুণাবলীর ব্যাপারে চিন্তা-ভাবনা করেছি এবং এর উসিলা দিয়ে দোয়া করেছি? (মানুষ নিজের চেনা-জানা কাউকেই ভালোবাসে, অপরিচিত কাউকে ভালোবাসে না। তাই মহান রবের নাম ও গুণাবলীসমূহ বিস্তারিত জানা জরুরি।) "},
+        {id:"s1l3", q:"আল্লাহ আমাকে যত আ'ম নেয়ামত (সুস্থতা, চোখ, কান, নাক, হাত, পা) এবং খাছ নেয়ামত (জিহাদের বুঝ ইত্যাদি) দান করেছেন সেসবের কথা কি আমার স্মরণ করেছি? (এসকল নেয়ামতের কারণে আল্লাহকে কত মহব্বত করা দরকার?)"},
+        {id:"s1l4", q:"দুনিয়ার ভালো ও কল্যাণকর সব কিছু কে সৃষ্টি করেছেন- এ কথা কি আমি চিন্তা করেছি? (নিঃসন্দেহে আল্লাহই সৃষ্টি করেছেন তাহলে তাঁকে কত মহব্বত করা দরকার?)"},
+        {id:"s1l5", q:"আমার মা-বাবা, নেককার মুসলমান, বিভিন্ন যুগের ইমামগণ এবং মুজাহিদ ওলামা-মাশায়েখ, সবাইকে আমি অন্তর থেকে ভালোবাসি। তাঁদেরকে এসব যোগ্যতা কে দিয়েছেন? কে তাদেরকে নেককার বানিয়েছেন? এ কথা কি আমি চিন্তা করেছি? (নিঃসন্দেহে আল্লাহ। তাহলে সেই রবকে কী পরিমাণ মহব্বত করা দরকার?)"},
+        {id:"s1l6", q:"আমি কি এভাবে দোয়া করেছি যে, হে আল্লাহ! আপনি যেহেতু আমাকে আমার মা-বাবা, ভাই-বোন, স্ত্রী-সন্তান ও আত্মীয়-স্বজন থেকে বেশি ভালোবাসেন তাই আমিও আপনাকে আমার মা-বাবা, ভাই-বোন, স্ত্রী-সন্তান ও আত্মীয়-স্বজন থেকে বেশি ভালোবাসি। (কথাটি বারবার বললে এক সময় অন্তরে গেঁথে যাবে ইনশাআল্লাহ)"},
+      ]},
+      { id:"s1d", title:"১মঃ সর্বদা আল্লাহর যিকির", items:[
+        {id:"s1d1", q:"অবসর সময়ে কি আমার জিহবা আল্লাহর যিকিরে ব্যস্ত ছিল? (হে আল্লাহ! আমার অন্তরকে সর্বদা আপনার যিকির ও ফিকির দ্বারা তাজা রাখুন। আমাকে আপনার যিকিরের স্বাদ অনুভব করার তাওফিক দান করুন।"},
+        {id:"s1d2", q:"সকল কাজের শুরুতে বিসমিল্লাহ বলেছি তো?"},
+        {id:"s1d3", q:"ঘুমের আগে ও পরের নির্ধারিত দোয়া পড়েছি তো?"},
+        {id:"s1d4", q:"পানাহারের আগে ও পরের দোয়া পড়েছি তো?"},
+        {id:"s1d5", q:"ঘরে, মসজিদে ও টয়লেটে প্রবেশ-বের হওয়ার দোয়া পড়েছি তো?"},
+        {id:"s1d6", q:"সুসংবাদ শুনে আলহামদুলিল্লাহ পড়েছি তো?"},
+        {id:"s1d7", q:"আমি কি কোনো দুঃসংবাদ শুনে ইন্নালিল্লাহি ওয়া ইন্না ইলাইহি রাজিঊন পড়েছি? পছন্দনীয়-অপছন্দনীয় সব কিছুই আল্লাহর ফায়সালা, এ কথাটি কি আমি স্মরণ করেছি? আমি কি অপছন্দনীয় সকল অবস্থায় আল্লাহর ফায়সালার ওপর সন্তুষ্টি থেকে ধৈর্য ধারণ করেছি? (العجلة و الصبر)"},
+      ]},
+      { id:"s1t", title:"১মঃ আল্লাহর উপর তাওয়াক্কুল", items:[
+        {id:"s1t1", q:"কোনো বিষয়ে মানুষকে (আনসার, ডোনর, তালিবান, আল কায়েদা, মাসউল ভাই, তাগুত, মুরতাদ, আমেরিকা কিংবা ভারত ইত্যাদিকে) আল্লাহর চেয়ে বেশি বা তাঁর সমান ক্ষমতার অধিকারী মনে করিনি তো?"},
+        {id:"s1t2", q:"(ব্যক্তিগত, পারিবারিক, ঈমানী, আমলী, আর্থিক, সামাজিক এবং তানজিমের কোনো কাজ-প্রজেক্টের ক্ষেত্রে) কোনো সমস্যা দেখা দিলে বা কোনো বিপদে পড়লে সবার আগে আল্লাহর কথা মনে হয়েছে তো এবং তাঁর কাছে দোয়া করেছি তো?"},
+        {id:"s1t3", q:"আমার জন্য, আমার সকল কাজের জন্য, আমার সকল দায়িত্বের জন্য, আমার সকল দুর্বলতা দূর করার জন্য যথেষ্ট হবার ক্ষমতা নিঃসন্দেহে আল্লাহর আছে। তিনি আমার সকল অবস্থা সম্পর্কে সম্যক অবগত, এ কথা আমার অন্তরে হাজির আছে তো? (তাহলে সকল বিষয়ে তাঁর উপরই ভরসা করা উচিৎ)"},
+        {id:"s1t4", q:"প্রত্যেক বান্দার ওপর আল্লাহর অসীম দয়া ও করুণা রয়েছে। আমার ওপরও তাঁর অসীম দয়া ও করুণা রয়েছে, এ কথা আমার অন্তরে হাজির আছে তো? (তাহলে সকল বিষয়ে তাঁর উপরই ভরসা করা উচিৎ)"},
+        {id:"s1t5", q:"দূর্বল কারো উপর কেউ ভরসা করতে পারে না। আর আল্লাহ রাব্বুল আলামীন হচ্ছেন সকল ক্ষমতার মালিক। আল্লাহর কুদরত ও ক্ষমতার ওপর কোনও কুদরত বা ক্ষমতা নেই, এ কথা আমার অন্তরে হাজির আছে তো? (তাহলে সকল বিষয়ে তাঁর উপরই ভরসা করা উচিৎ)"},
+        {id:"s1t6", q:"শক্তির পাশাপাশি যার উপর ভরসা করা হবে, তাঁর জ্ঞান ও বিচক্ষণতা থাকা দরকার। আর আল্লাহ তা'আলা হলেন সবচেয়ে বড় জ্ঞানী, সবচেয়ে বেশি বিচক্ষণ, এ কথা আমার অন্তরে হাজির আছে তো? (তাহলে সকল বিষয়ে একমাত্র তাঁর উপরই ভরসা করা উচিৎ)"},
+        {id:"s1t7", q:"শক্তি ও জ্ঞানের পাশাপাশি কল্যাণকামী না হলে কারো উপর ভরসা করা যায় না। আর আল্লাহ হচ্ছেন সবচেয়ে বেশী কল্যাণকামী। এমনকি আমাদের পিতামাতা কিংবা অন্য সবার তুলনায় সবচেয়ে বেশী কল্যাণকামী। এ কথা আমার অন্তরে হাজির আছে তো? (তাহলে সকল বিষয়ে একমাত্র তাঁর উপরই ভরসা করা উচিৎ)"},
+        {id:"s1t8", q:"বিভিন্ন ক্ষেত্রে আল্লাহর শক্তি ও সাহায্য দেখার মাধ্যমে আমার অন্তরে কি তাঁর শক্তি ও ক্ষমতার ব্যাপারে বিশ্বাসের পাশাপাশি পরিপূর্ণ আস্থা জন্মেছে?"},
+        {id:"s1t9", q:"সব ধরনের জড় পদার্থ যেমন, ইন্টারনেট, ল্যাপটপ, শেষ রাতে উঠার জন্য এলার্ম ঘড়ি ইত্যাদির ওপর ভরসা করার মানসিকতা কি আমার অন্তর থেকে দূর হয়েছে? নৌকা পানির ওপর চলে কিন্তু আল্লাহ চাইলে পানি ছাড়াও নৌকা চালাতে পারেন, এ কথা আমার অন্তরে হাজির আছে তো?"},
+        {id:"s1t10", q:"সকল ক্ষমতার মালিক একমাত্র আল্লাহ। আল্লাহ ছাড়া অন্য সবার যেমন, হাই কোয়ালিটি ভাই, আনসার, ডোনর ও শত্রু বাহিনীর ক্ষমতার প্রতি বিশ্বাস আমার অন্তর থেকে দূর হয়েছে তো?"},
+      ]},
+       { id:"s1g", title:"২য়ঃ উত্তমভাবে জামাতবদ্ধ জীবন যাপন করা", items:[
+        {id:"s1g1", q:"কোনো কাজ আমার অপছন্দ হলেও মাসউলের নির্দেশের কারণে আমি কি তা মেনে নিয়েছি? এবং ধৈর্যের সাথে, সঠিকভাবে তা সম্পন্ন করেছি?"},
+        {id:"s1g2", q:"আমি কি আমার নিজের মতকে উপেক্ষা করে ইমারার সিদ্ধান্তকে মেনে নিয়েছি এবং তা বাস্তবায়ন করেছি?"},
+        {id:"s1g3", q:"আমার মতের বিপরীত হওয়ার কারণে ইমারার কোনো সিদ্ধান্তের ক্ষেত্রে প্রত্যক্ষ বা পরোক্ষভাবে বাঁধা সৃষ্টি করিনি তো?"},
+        {id:"s1g4", q:"আমি কি আমার মামুর বা মাসউলকে কথায় বা আচরণে হেয় প্রতিপন্ন করেছি?"},
+        {id:"s1g5", q:"সব মানুষ এক রকম হয় না, কোনো ভাইয়ের কথায় বা আচরণে কখনো কষ্ট পাওয়া স্বাভাবিক, আমি ওসবের কোনো প্রতিক্রিয়া না দেখিয়ে সহজে মেনে নিয়েছি তো?"},
+        {id:"s1g6", q:"কথায়, আচরণে, সিদ্ধান্তে অন্যের জন্য আমি কি তাই পছন্দ করছি যা নিজের জন্য করতাম? আমার কথায় বা আচরণে অন্য ভাই মনে কষ্ট পাচ্ছে না তো?"},
+        {id:"s1g7", q:"নিজের গুনাহ ও দূর্বলতা থেকে নযর সরিয়ে রেখে, আমি শুধু অন্যের দূর্বলতার দিকে নযর দিচ্ছি না তো?"},
+        {id:"s1g8", q:"আমি ব্যক্তিগত কাজে বেশী সময় দিয়ে জিহাদ ফি সাবিলিল্লাহর কাজকে পিছিয়ে দিচ্ছি না তো?"},
+      ]},
+      { id:"s2e", title:"২য়ঃ হিংসা ও লোভ থেকে বেঁচে থাকা", items:[
+        {id:"s2e1", q:"আমার কোনো ভাই আমার আগে মাসউল হওয়ার কারণে বা কাজের জন্য তানজিম থেকে মোবাইল, ল্যাপটপ ইত্যাদি পাওয়ার কারণে তাঁর প্রতি হিংসা করছি না তো?"},
+        {id:"s2e2", q:"আমি বাইতুল মালের জন্য সংগৃহীত সাদাকার টাকার প্রতি কোনো ধরনের লোভ করছি না তো?"},
+        {id:"s2e3", q:"আমি নিজের টাকা দিয়ে কিছু কেনার সময় যে দামে কিনে থাকি, বাইতুল মালের টাকা দিয়ে কেনার সময় তার চেয়ে বেশি দামে কিনি না তো?"},
+        {id:"s2e4", q:" নিজের টাকা থেকে খরচ করতে পারি এমন ছোট খাটো কাজে বাইতুল মালের টাকা খরচ করছি না তো? (এটি নিজেকে নিরাপদ রাখার জন্য, বাধ্যতামূলক নয়)"},
+        {id:"s2e5", q:"তানজিমের কাজের জন্য কিছু কেনার আগে অভিজ্ঞ কোনো ভাইকে দিয়ে ভালোভাবে যাচাই করে নিই তো, যে আমি বেশি খরচ করে ফেলছি কি না?"},
+        {id:"s2e6", q:"কেউ কোনো ভালো কাজ করতে না পারলে তা দেখে আমি আনন্দিত হইনি তো? এটা অন্তরে হিংসা থাকার লক্ষণ। (الحسد)"},
+      ]},
+      { id:"s2i", title:"২য়ঃ ইবাদতে, আমলে ইখলাস থাকা ও প্রচার বিমুখ হওয়া", items:[
+        {id:"s2i1", q:"আমার ছোট-বড় সকল কাজ একমাত্র আল্লাহর জন্য হচ্ছে তো? প্রতিটি কথা ও কাজের আগে নিয়ত চেক করছি তো? (প্রতিটি কাজের আগে নিয়ত করার অভ্যাস না থাকলে, প্রাথমিকভাবে সারাদিনের সমস্ত কথা, কাজ ও মেসেজের জন্য সকালবেলা একসাথে নিয়ত করে নেয়া যায়)"},
+        {id:"s2i2", q:"আমি কি এভাবে দোয়া করেছি যে, হে আল্লাহ, আমার আজকের দিনের সকল কথা, কাজ ও মেসেজ, পাশাপাশি আমার সারা জীবনের সকল কথা, কাজ ও মেসেজকে একমাত্র আপনার সন্তুষ্টি অর্জনের মাধ্যম বানান এবং সকল প্রকার লোক দেখানো কথা ও কাজ থেকে আমাকে রক্ষা করুন।"},
+        {id:"s2i3", q:"আমি কোনো কাজ না করে সে কাজের জন্য অন্যদের কাছ থেকে প্রশংসা পাওয়ার আশা করিনি তো?"},
+        {id:"s2i4", q:"কারো প্রতি কোনো অনুগ্রহ করলে অন্যদের কাছ থেকে তা গোপন রাখার চেষ্টা করেছি তো?"},
+        {id:"s2i5", q:"কোনো নেক আমল করে মানুষের কাছ থেকে প্রশংসা বা সম্মান পাওয়ার জন্যে তা তাদের কাছে প্রকাশ করিনি তো?"},
+        {id:"s2i6", q:"নিছক মানুষের নিন্দার আশংকায় কোনো নেক আমল ছেড়ে দিইনি তো?"},
+        {id:"s2i7", q:"সাহাবায়ে কেরামও রাযি. নিজেদের ব্যাপারে নিফাকের ভয় করতেন। তাই আমি কি শিরক ও নিফাক থেকে বাঁচার জন্য এবং অন্তরের সকল রোগ থেকে নিজের ইসলাহের জন্য আল্লাহর কাছে দোয়া করেছি?"},
+      ]},
+      { id:"s2q", title:"২য়ঃ তাকওয়া অর্জন", items:[
+        {id:"s2q1", q:"আমার অন্তরে যেন তাকওয়া বা আল্লাহর ভয় তৈরি হয় সে জন্য আল্লাহর কাছে দোয়া করেছি তো?", detail:"اللَّهُمَّ إِنِّي أَسْأَلُكَ خَشْيَتَكَ فِي الْغَيْبِ وَالشَّهَادَةِ — হে আল্লাহ! আমি আপনার কাছে গোপনে ও প্রকাশ্যে আপনার ভয় প্রার্থনা করছি."},
+        {id:"s2q2", q:"আমি কি সব সময় পেট ভরা না রেখে, যথাসম্ভব খালি রাখার চেষ্টা করেছি? এবং বেশি বেশি রোযা রাখার চেষ্টা করেছি? (কারণ, পেট ভরা থাকলে অন্তরে আল্লাহর ভয় কম থাকে)"},
+        {id:"s2q3", q:"আমার নফল ইবাদতের পরিমাণ দিন দিন বৃদ্ধি পাচ্ছে তো? কুরআন তেলাওয়াত, নফল নামায ও যিকির-আযকারের পরিমাণ কি পূর্বের তূলনায় বৃদ্ধি পেয়েছে? (কারণ, এর মাধ্যমে অন্তরে তাকওয়া বৃদ্ধি পায়)"},
+        {id:"s2q4", q:"আমি সকল সুন্নাহ পালন করার জন্য যথাসম্ভব চেষ্টা করছি তো?"},
+        {id:"s2q5", q:"আমি মৃত্যুর কথা বেশি বেশি স্মরণ করছি তো? (এতে অন্তরে তাকওয়া বৃদ্ধি পায়)"},
+        {id:"s2q6", q:"আমি কি নিয়মিত কিছু কিছু করে ইলম অর্জন করার চেষ্টা করছি? নিয়মিত দুই-তিনটি করে আল্লাহর নাম ও গুণাবলী জানা এবং তা নিয়ে চিন্তা-ভাবনা করছি তো? (কারণ, আল্লাহকে যে যত বেশি চিনে-জানে সে আল্লাহকে তত বেশি ভয় করে)"},
+      ]},
+      { id:"s2r", title:"২য়ঃ তায়াল্লুক মা'আল্লাহ ও ইবাদতের রুহ অর্জন", items:[
+        {id:"s2r1", q:"আমি কি জীবন্ত নামাজ আদায় করছি? আমার নামাজে পূর্ণ খুশু-খুজু থাকছে কি?"},
+        {id:"s2r2", q:"পূর্ণ খুশু-খুজু না থাকলে, ধীরে ধীরে তা অর্জনের চেষ্টা করছি কি? না গাফলতের সঙ্গেই নামায আদায় করে যাচ্ছি?"},
+        {id:"s2r3", q:"নামাজের প্রতিটা দুয়া-জিকির যথাসম্ভব অর্থ খেয়াল করে পড়েছি কি?"},
+        {id:"s2r4", q:"আমলের পরিমাণের চেয়ে আমলের ভালো মানের প্রতি গুরুত্বারোপ করেছি কি? যেমন, নামাযে তাড়াহুড়া ও বেখেয়াল হলেও বেশি রাকাত আদায় করার চেষ্টা করেছি, না রাকাত কম হলেও ধীরে সুস্থে খুশু খুজুর সঙ্গে আদায় করার চেষ্টা করেছি? মনে রাখতে হবে, খুশু খুজু পূর্ণ দুই রাকাত নামায, বেখেয়াল অনেক রাকাত অপেক্ষা উত্তম।"},
+        {id:"s2r5", q:"নামাজে খুশু-খুজু অর্জনের উপায়সমূহ নিয়ে পড়া, পর্যালোচনা, চিন্তা-ফিকির করেছি কি?"},
+      ]},
+    ]
+  },
+  weekly: {
+    label: "সাপ্তাহিক",
+    categories: [
+      { id:"wg", title:"সাধারণ মুহাসাবা", items:[
+        {id:"wg1", q:"কোনো ভাইকে কোনো সুযোগ সুবিধা দিতে বা কোনো ব্যাপারে প্রাধান্য দিতে আমার অন্তরে সংকীর্ণতা আসেনি তো? (شُحَّ )"},
+        {id:"wg2", q:"কাউকে ভাল লাগলে তা তাঁর দ্বীনদারী ও তাকওয়া-পরহেযগারীর কারণেই হয়েছে তো?"},
+        {id:"wg3", q:"মা-বাবা, স্ত্রী-সন্তান, জমি-জমা বা কোনো দেনা-পাওনার ব্যাপারে কোনো অসিয়ত করার থাকলে তা লিখে রেখেছি তো?"},
+        {id:"wg4", q:"দুনিয়াদারদের ধনসম্পদ, প্রভাব প্রতিপত্তি ও মান মর্যাদা দেখে আমি নিজের মধ্যে ওসবের অভাব বোধ করিনি তো? (حب المال والجاه)"},
+        {id:"wg5", q:"আমার থেকে কোনো ফরয ইবাদতের ব্যাপারে কোনো ধরনের গাফলতি হয়নি তো? হয়ে থাকলে তা থেকে তাওবা করে শাস্তি স্বরূপ কোনো নফল আমল করেছি তো? (التوبة)"},
+        {id:"wg6", q:"আমার থেকে কোনো হারাম বা গুনাহের কাজ হয়ে যায়নি তো? হয়ে থাকলে তা থেকে তাওবা করে শাস্তি স্বরূপ কোনো নফল আমল করেছি তো? (التوبة)"},
+        {id:"wg7", q:"আমি নিজের কোনো আমলের কথা স্মরণ করে মনে মনে তৃপ্তিবোধ করিনি তো যে, এটি আমি নিজের যোগ্যতা বলে করেছি, আমি কী সুন্দর করে কাজ করতে পারি! (এর নামই হল উজব عُجْب, এটি হারাম)"},
+        {id:"wg8", q:"সবার সাথে বিশেষ করে আমার মা-বাবা, সন্তানাদি ও স্ত্রীর সাথে কথা বার্তা ও আচার-আচরণে নম্রতা অবলম্বন করেছি তো (أدب)"},
+        {id:"wg9", q:"আমি আমার পরিচিত-অপরিচিত সকল মুসলমানকে সালাম দিয়েছি তো? (إفشاء السلام)"},
+        {id:"wg10", q:"আমি কি কারো কোনো উপকার করেছি? বা কারো কোনো কষ্ট দূর করার চেষ্টা করেছি? (حسن الخلق)"},
+        {id:"wg11", q:"কারো প্রশংসা শুনে আমার কাছে খারাপ লাগেনি তো? এবং কারো নিন্দা শুনে আমি খুশি হইনি তো?"},
+        {id:"wg12", q:"অন্যের গীবত করা ও গীবত শোনা থেকে আমি কি বিরত থেকেছি? (الغيبة) (রিয়াযুস সালিহীনে উল্লেখিত ছয়টি বিশেষ অবস্থা ছাড়া)"},
+        {id:"wg13", q:"আলেম উলামাদেরকে, মুজাহিদ ভাইদেরকে এবং সাধারণ মুসলমান ভাইদেরকে তুচ্ছ-তাচ্ছিল্য করা থেকে বিরত থেকেছি তো? (تحقير)"},
+        {id:"wg14", q:"আমি আমার সকল প্রতিশ্রুতি রক্ষা করেছি তো?"},
+        {id:"wg15", q:"আমি অন্যদেরকে যে উপদেশ দিই, তা নিজেও আমল করি তো?"},
+        {id:"wg16", q:"আমার ওপর অর্পিত সব ধরণের আমানত-কথা, টাকা পয়সা, সম্পর্ক, দায়িত্ব ইত্যাদির যথাযথ হেফাযত করছি তো?"},
+        {id:"wg17", q:"আমি হাইড আউট হয়ে থাকলে যথাযথ নিয়ম মেনে চলছি তো? নাকি অন্য ভাইদের জন্য বিপদের কারণ হচ্ছি?"},
+        {id:"wg18", q:"আমর বিল মারুফ ও নাহি আ'নিল মুনকারের ক্ষেত্রে এবং অন্যান্য ভাইদের ইসলাহের ক্ষেত্রে যথাসাধ্য চেষ্টা করে যাচ্ছি তো?"},
+        {id:"wg19", q:"দ্বীনের কোন বিষয়ে সন্দেহ থাকলে তা দূর করার জন্য যথাযথ চেষ্টা করেছি তো? এর জন্য প্রয়োজনে কোনো হক্কানী আলেমের স্মরণাপন্ন হয়েছি তো ?"},
+        {id:"wg20", q:"আমি কি নিজের ব্যক্তিগত কাজে বেশি সময় দিই আর জিহাদ ফি সাবিলিল্লাহর কাজে কম সময় দিই?"},
+        {id:"wg21", q:"গত সপ্তাহের তূলনায় এ সপ্তাহে ঘুম কিছুটা কমিয়ে এনেছি তো? (ঘুমের পরিমাণ কমিয়ে আনলে ইবাদত-বন্দেগিতে এবং জিহাদের কাজে আরও বেশি সময় দিতে পারবো ইনশাআল্লাহ)"},
+        {id:"wg22", q:"কিছু সময় কোনো সূরা হিফয করা বা কোনো ইলমী বিষয় কিংবা আইটি বা সামাজিক বিষয় অথবা জিহাদের স্ট্র্যাটেজি ইত্যাদি নিয়ে পড়াশোনা করেছি তো?"},
+        {id:"wg23", q:"ঘরে নিয়মিত তালিমের মজলিস চালু আছে তো? (অন্তত ১০ মিনিট হলেও)"},
+      ]},
+      { id:"wa", title:"রাগ দূরীকরণ", items:[
+        {id:"wa1", q:"আমি কি নিজের রাগ দূর করার জন্য অর্থের প্রতি খেয়াল করে প্রতিদিন একাধিকবার ‘আউযুবিল্লাহ’, ‘আউযুবিল্লাহি মিন শাররি নাফসি’ পড়েছি?"},
+        {id:"wa2", q:"আমি খুব সহজেই খুশি হই এবং অনেক দেরিতে রাগ করি তো? না তার উল্টোটা করি? (কারণ, ওই ব্যক্তি সবচেয়ে খারাপ স্বভাবের অধিকারী যে সহজে রেগে যায় এবং অনেক দেরিতে খুশি হয়)"},
+        {id:"wa3", q:"কারো প্রতি রাগ উঠলে তা মিটাতে না পারলে সাধারণত তার প্রতি অন্তরে ঘৃণা তৈরি হয়। (রাগ মূলত অহংকারের কারণেই আসে) আমার এমন হয় না তো? আমি ব্যক্তিগত কারণে কাউকে ঘৃণা করি না তো?"},
+        {id:"wa4", q:"কারও উপর রাগ করলে তা একমাত্র আল্লাহর জন্যই করেছি তো? ব্যক্তিগত লাভ-ক্ষতির চিন্তায় কোন সাথী ভাইয়ের প্রতি আমার ভালোবাসা কমেনি তো? "},
+        {id:"wa5", q:"দ্বীনি কারণ ছাড়া অন্য কোনো কারণে কারো ওপর রাগ করিনি তো? যদি করে থাকি তাহলে সেই রাগ দূর করে ফেলেছি তো?"},
+      ]},
+      { id:"wl", title:"অলসতা দূরীকরণ", items:[
+        {id:"wl1", q:"আমি কি আল্লাহর কাছে নিজের অলসতা দূর করার জন্য দোয়া করেছি?",
+          detail:"اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ-হে আল্লাহ! আমি আপনার কাছে দুশ্চিন্তা ও দুঃখ থেকে, অকর্মন্যতা ও অলসতা থেকে, কৃপণতা ও কাপুরুষতা থেকে, ঋণের ভার ও মানুষদের দমন-পীড়ন থেকে আশ্রয় কামনা করি।"},
+        {id:"wl2", q:"যে কোনো গুরুত্বপূর্ণ কাজ পরে করবো বলে না রেখে দিয়ে সাথে সাথে করে ফেলি তো?"},
+        {id:"wl3", q:"প্রয়োজনে আমি কি আমার খাদ্যাভ্যাস পরিবর্তন করেছি? (যেমন, ভাত কম খেয়ে রুটি বেশি খাওয়া ইত্যাদি) আমি কি পরিমিত ঘুমানোর চেষ্টা করেছি?"},
+        {id:"wl4", q:"কম ঘুম ও কম খাবার দ্বারাই যেন আমার প্রয়োজন মিটে যায়, এর জন্য আমি কি আল্লাহর কাছে দোয়া করেছি?"},
+        {id:"wl5", q:"আমি প্রতিদিন যথানিয়মে ব্যায়াম করি তো? (কারণ, ব্যায়াম না করলে শরীরে অলসতা এসে যায়।)"},
+        {id:"wl6", q:"আমি দীর্ঘ সময় ধরে কম্পিউটারে কাজ করলে কিছুক্ষণ পর পর দুই-তিন মিনিট বিরতি দেয়া, একটু হাঁটা চলা করা, হালকা ব্যায়াম করা বা উঠ-বস করা, এসব করি তো? (যেন এক টানা কাজ করতে করতে শরীরে অলসতা না এসে যায়।)"},
+      ]},
+    ]
+  }
+};
+
+const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
+function toBn(n){ return String(n).split("").map(c => /\d/.test(c) ? BN_DIGITS[c] : c).join(""); }
+const WEEKDAYS = ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
+const MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+
+function fmtDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function keyFor(d){ return "muhasaba:"+fmtDate(d); }
+
+let currentDate = new Date();
+let currentTab = "daily";
+let dayState = { checked:{}, note:"" };
+let openCats = {}; // category open state, persists across tab switches within session
+
+function tabOrder(){ return ["daily","alt","weekly"]; }
+
+async function loadDay(d){
+  const status = document.getElementById("saveStatus");
+  try{
+    const raw = localStorage.getItem(keyFor(d));
+    dayState = raw ? JSON.parse(raw) : { checked:{}, note:"" };
+  }catch(e){
+    dayState = { checked:{}, note:"" };
+  }
+  status.textContent = "প্রস্তুত"; status.className="save-status";
+}
+
+let saveTimer=null;
+function scheduleSave(){
+  const status = document.getElementById("saveStatus");
+  status.textContent = "সেভ হচ্ছে…"; status.className="save-status";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(keyFor(currentDate), JSON.stringify(dayState));
+      status.textContent = "সেভ হয়েছে ✓"; status.className="save-status ok";
+    }catch(e){
+      status.textContent = "সেভ ব্যর্থ হয়েছে"; status.className="save-status";
+    }
+  }, 300);
+}
+
+function renderDateBar(){
+  const d = currentDate;
+  document.getElementById("dateD1").textContent = WEEKDAYS[d.getDay()];
+  document.getElementById("dateD2").textContent = `${toBn(d.getDate())} ${MONTHS[d.getMonth()]}, ${toBn(d.getFullYear())}`;
+  try{
+    const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {day:'numeric', month:'long', year:'numeric'}).format(d);
+    document.getElementById("dateD3").textContent = hijri + " هـ";
+  }catch(e){
+    document.getElementById("dateD3").textContent = "";
+  }
+}
+
+function allItemsFlat(){
+  let out=[];
+  for(const key of tabOrder()){
+    for(const cat of DATA[key].categories) out = out.concat(cat.items);
+  }
+  return out;
+}
+
+function renderRing(){
+  // progress = current tab's items checked ratio
+  const cats = DATA[currentTab].categories;
+  let total=0, done=0;
+  for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+  const pct = total? Math.round((done/total)*100) : 0;
+  const circumference = 138.2;
+  const offset = circumference - (pct/100)*circumference;
+  document.getElementById("ringFg").style.strokeDashoffset = offset;
+  document.getElementById("ringPct").textContent = toBn(pct)+"%";
+}
+
+function renderTabs(){
+  const wrap = document.getElementById("tabs");
+  wrap.innerHTML = "";
+  for(const key of tabOrder()){
+    const cats = DATA[key].categories;
+    let total=0, done=0;
+    for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+    const div = document.createElement("div");
+    div.className = "tab" + (key===currentTab ? " active":"");
+    div.innerHTML = `${DATA[key].label}<span class="badge">${toBn(done)}/${toBn(total)}</span>`;
+    div.onclick = () => { currentTab = key; renderAll(); };
+    wrap.appendChild(div);
+  }
+}
+
+function renderMain(){
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+  const cats = DATA[currentTab].categories;
+  for(const cat of cats){
+    const total = cat.items.length;
+    const done = cat.items.filter(it=>dayState.checked[it.id]).length;
+    const isOpen = openCats[cat.id] !== undefined ? openCats[cat.id] : (currentTab==="daily");
+    openCats[cat.id] = isOpen;
+
+    const catDiv = document.createElement("div");
+    catDiv.className = "category" + (isOpen ? " open":"");
+
+    const head = document.createElement("div");
+    head.className = "cat-head";
+    head.innerHTML = `<h3>${cat.title}</h3><div class="cat-meta"><span class="cat-count">${toBn(done)}/${toBn(total)}</span><span class="chev">▾</span></div>`;
+    head.onclick = ()=>{ openCats[cat.id] = !openCats[cat.id]; renderMain(); };
+    catDiv.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "cat-body";
+    const inner = document.createElement("div");
+    inner.className = "cat-inner";
+
+    for(const it of cat.items){
+      const checked = !!dayState.checked[it.id];
+      const row = document.createElement("div");
+      row.className = "item" + (checked ? " done":"");
+
+      const chk = document.createElement("div");
+      chk.className = "chk" + (checked ? " on":"");
+      chk.onclick = ()=>{
+        if(dayState.checked[it.id]) delete dayState.checked[it.id];
+        else dayState.checked[it.id] = true;
+        scheduleSave();
+        renderMain(); renderTabs(); renderRing();
+      };
+
+      const textWrap = document.createElement("div");
+      textWrap.className = "item-text";
+      const qDiv = document.createElement("div");
+      qDiv.className = "item-q";
+      qDiv.textContent = it.q;
+      qDiv.onclick = chk.onclick;
+      textWrap.appendChild(qDiv);
+
+      if(it.detail){
+        const toggle = document.createElement("span");
+        toggle.className = "detail-toggle";
+        toggle.textContent = "বিস্তারিত দেখুন";
+        const detailDiv = document.createElement("div");
+        detailDiv.className = "item-detail";
+        detailDiv.textContent = it.detail;
+        toggle.onclick = (e)=>{
+          e.stopPropagation();
+          detailDiv.classList.toggle("show");
+          toggle.textContent = detailDiv.classList.contains("show") ? "বিস্তারিত লুকান" : "বিস্তারিত দেখুন";
+        };
+        textWrap.appendChild(toggle);
+        textWrap.appendChild(detailDiv);
+      }
+
+      row.appendChild(chk);
+      row.appendChild(textWrap);
+      inner.appendChild(row);
+    }
+
+    body.appendChild(inner);
+    catDiv.appendChild(body);
+    main.appendChild(catDiv);
+  }
+
+  // notes box
+  const notesBox = document.createElement("div");
+  notesBox.className = "notes-box";
+  notesBox.innerHTML = `<h3>দিনের নোট</h3>`;
+  const ta = document.createElement("textarea");
+  ta.placeholder = "আজকের বিশেষ কোনো অনুভূতি, দুর্বলতা বা লক্ষ্য লিখে রাখুন…";
+  ta.value = dayState.note || "";
+  ta.oninput = ()=>{ dayState.note = ta.value; scheduleSave(); };
+  notesBox.appendChild(ta);
+  main.appendChild(notesBox);
+}
+
+function renderAll(){
+  renderDateBar();
+  renderTabs();
+  renderMain();
+  renderRing();
+}
+
+async function goToDate(d){
+  currentDate = d;
+  await loadDay(currentDate);
+  renderAll();
+}
+
+document.getElementById("prevDay").onclick = ()=>{
+  const d = new Date(currentDate); d.setDate(d.getDate()-1); goToDate(d);
+};
+document.getElementById("nextDay").onclick = ()=>{
+  const d = new Date(currentDate); d.setDate(d.getDate()+1); goToDate(d);
+};
+document.getElementById("todayBtn").onclick = ()=>{ goToDate(new Date()); };
+document.getElementById("expandAll").onclick = ()=>{
+  const cats = DATA[currentTab].categories;
+  const anyClosed = cats.some(c => !openCats[c.id]);
+  cats.forEach(c => openCats[c.id] = anyClosed);
+  renderMain();
+};
+
+// init
+(async ()=>{
+  await goToDate(new Date());
+})();
+</script>
+</body>
+</html>
