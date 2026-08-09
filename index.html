@@ -204,7 +204,73 @@
 .report-cat-row .pct{font-size:13px; font-weight:700; width:44px; text-align:right;}
 .bar-track{flex:2; height:7px; background:var(--line); border-radius:5px; overflow:hidden;}
 .bar-fill{height:100%; border-radius:5px; background:var(--check);}
-</style>
+
+  /* Task tab */
+  .task-toolbar{display:flex; gap:8px; margin-bottom:12px;}
+  .task-add-btn{
+    flex:1; text-align:center; padding:10px; border-radius:12px; border:1.5px dashed var(--gold);
+    background:var(--paper-2); color:var(--bg-deep); font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .task-filters{display:flex; gap:6px; margin-bottom:12px; overflow-x:auto;}
+  .task-filter{
+    flex-shrink:0; padding:6px 12px; border-radius:20px; border:1.5px solid var(--line);
+    background:#fff; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer;
+  }
+  .task-filter.active{border-color:var(--gold); background:var(--paper-2); color:var(--bg-deep);}
+  .task-card{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .task-card.done{opacity:0.55;}
+  .task-no{
+    font-size:11px; font-weight:700; color:var(--muted); background:#fff; border-radius:8px;
+    width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  }
+  .task-chk{
+    width:21px;height:21px; border-radius:6px; border:2px solid var(--muted-2);
+    flex-shrink:0; margin-top:1px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    background:#fff; transition:.15s;
+  }
+  .task-chk.on{background:var(--check); border-color:var(--check);}
+  .task-chk.on::after{content:"✓"; color:#fff; font-size:13px; font-weight:700;}
+  .task-body{flex:1;}
+  .task-name{font-size:14.5px; font-weight:600; color:var(--ink);}
+  .task-card.done .task-name{text-decoration:line-through; color:var(--muted);}
+  .task-meta-row{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap;}
+  .task-badge{
+    font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px;
+  }
+  .badge-priority-high{background:#F4D9D2; color:#A13B22;}
+  .badge-priority-medium{background:#F6E6C4; color:#8A6511;}
+  .badge-priority-low{background:#D9E8DD; color:#2F6B4F;}
+  .badge-cat{background:#E2E9E4; color:#3E4F44;}
+  .badge-deadline{background:#fff; color:var(--muted); border:1px solid var(--line);}
+  .task-del{
+    font-size:16px; color:var(--muted-2); cursor:pointer; padding:2px 6px; flex-shrink:0;
+  }
+  .task-empty{text-align:center; padding:40px 10px; color:var(--muted); font-size:13px;}
+
+  .form-overlay{
+    position:fixed; inset:0; background:rgba(14,42,32,0.65); z-index:60;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .form-overlay.show{display:flex;}
+  .form-box{
+    background:var(--paper); width:100%; max-width:640px; max-height:90vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:16px 16px 24px;
+  }
+  .form-group{margin-bottom:14px;}
+  .form-group label{display:block; font-size:12.5px; font-weight:600; color:var(--bg-deep); margin-bottom:6px;}
+  .form-group input[type="text"], .form-group input[type="date"], .form-group select{
+    width:100%; border:1px solid var(--line); border-radius:10px; padding:10px;
+    font-family:'Hind Siliguri', sans-serif; font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  .form-row{display:flex; gap:10px;}
+  .form-row .form-group{flex:1;}
+  .form-save-btn{
+    width:100%; padding:12px; border-radius:12px; border:none; background:var(--check);
+    color:#fff; font-weight:700; font-size:14px; cursor:pointer; margin-top:4px;
+  }
 </style>
 </head>
 <body>
@@ -214,6 +280,7 @@
     <div class="crescent"></div>
     <div class="brand-text">
       <h1>মুহাসাবা</h1>
+      <p>দৈনিক আমলের হিসাব</p>
       <p id="streakText" style="margin-top:2px;"></p>
     </div>
   </div>
@@ -240,7 +307,6 @@
     </div>
   </div>
 </header>
-  </header>
 
 <div class="modal-overlay" id="reportModal">
   <div class="modal-box">
@@ -262,6 +328,42 @@
 <main id="main">
   <div class="loading">লোড হচ্ছে…</div>
 </main>
+
+<div class="form-overlay" id="taskFormOverlay">
+  <div class="form-box">
+    <div class="modal-head">
+      <h2 id="taskFormTitle">নতুন টাস্ক</h2>
+      <div class="modal-close" id="closeTaskForm">✕</div>
+    </div>
+    <div class="form-group">
+      <label>কাজের নাম</label>
+      <input type="text" id="taskNameInput" placeholder="যেমন: রিপোর্ট জমা দেওয়া">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ডেডলাইন</label>
+        <input type="date" id="taskDeadlineInput">
+      </div>
+      <div class="form-group">
+        <label>প্রায়োরিটি</label>
+        <select id="taskPriorityInput">
+          <option value="high">জরুরি</option>
+          <option value="medium" selected>মাঝারি</option>
+          <option value="low">কম</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>ধরন</label>
+      <select id="taskCategoryInput">
+        <option value="personal">ব্যক্তিগত</option>
+        <option value="official">অফিসিয়াল</option>
+        <option value="business">বিজনেস</option>
+      </select>
+    </div>
+    <button class="form-save-btn" id="taskSaveBtn">সেভ করুন</button>
+  </div>
+</div>
 
 <div class="savebar">
   <div class="save-status" id="saveStatus">প্রস্তুত</div>
@@ -461,6 +563,7 @@ const DATA = {
   }
 };
 
+
 const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
 function toBn(n){ return String(n).split("").map(c => /\d/.test(c) ? BN_DIGITS[c] : c).join(""); }
 const WEEKDAYS = ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
@@ -526,10 +629,15 @@ function allItemsFlat(){
 }
 
 function renderRing(){
-  // progress = current tab's items checked ratio
-  const cats = DATA[currentTab].categories;
   let total=0, done=0;
-  for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+  if(currentTab === "task"){
+    const tasks = loadTasks();
+    total = tasks.length;
+    done = tasks.filter(t=>t.done).length;
+  } else {
+    const cats = DATA[currentTab].categories;
+    for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+  }
   const pct = total? Math.round((done/total)*100) : 0;
   const circumference = 138.2;
   const offset = circumference - (pct/100)*circumference;
@@ -550,11 +658,25 @@ function renderTabs(){
     div.onclick = () => { currentTab = key; renderAll(); };
     wrap.appendChild(div);
   }
+  // task tab
+  const tasks = loadTasks();
+  const tDone = tasks.filter(t=>t.done).length;
+  const taskDiv = document.createElement("div");
+  taskDiv.className = "tab" + (currentTab==="task" ? " active":"");
+  taskDiv.innerHTML = `টাস্ক<span class="badge">${toBn(tDone)}/${toBn(tasks.length)}</span>`;
+  taskDiv.onclick = () => { currentTab = "task"; renderAll(); };
+  wrap.appendChild(taskDiv);
 }
 
 function renderMain(){
   const main = document.getElementById("main");
   main.innerHTML = "";
+
+  if(currentTab === "task"){
+    renderTaskTab(main);
+    return;
+  }
+
   const cats = DATA[currentTab].categories;
   for(const cat of cats){
     const total = cat.items.length;
@@ -636,6 +758,175 @@ function renderMain(){
   notesBox.appendChild(ta);
   main.appendChild(notesBox);
 }
+// ---------- Tasks ----------
+const TASKS_KEY = "muhasaba-tasks";
+let taskFilter = "all"; // all | pending | done | personal | official | business
+let editingTaskId = null;
+
+function loadTasks(){
+  try{
+    const raw = localStorage.getItem(TASKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveTasks(tasks){
+  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+}
+
+const PRIORITY_LABEL = {high:"জরুরি", medium:"মাঝারি", low:"কম"};
+const CATEGORY_LABEL = {personal:"ব্যক্তিগত", official:"অফিসিয়াল", business:"বিজনেস"};
+
+function fmtDeadline(dstr){
+  if(!dstr) return "";
+  const d = new Date(dstr + "T00:00:00");
+  return `${toBn(d.getDate())} ${MONTHS[d.getMonth()]}`;
+}
+
+function renderTaskTab(main){
+  let tasks = loadTasks();
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "task-toolbar";
+  toolbar.innerHTML = `<div class="task-add-btn" id="taskAddBtn">+ নতুন টাস্ক যোগ করুন</div>`;
+  main.appendChild(toolbar);
+  document.getElementById("taskAddBtn").onclick = ()=>openTaskForm(null);
+
+  const filters = document.createElement("div");
+  filters.className = "task-filters";
+  const filterDefs = [
+    {key:"all", label:"সব"},
+    {key:"pending", label:"বাকি"},
+    {key:"done", label:"সম্পন্ন"},
+    {key:"personal", label:"ব্যক্তিগত"},
+    {key:"official", label:"অফিসিয়াল"},
+    {key:"business", label:"বিজনেস"},
+  ];
+  filterDefs.forEach(f=>{
+    const btn = document.createElement("div");
+    btn.className = "task-filter" + (taskFilter===f.key ? " active":"");
+    btn.textContent = f.label;
+    btn.onclick = ()=>{ taskFilter = f.key; renderMain(); };
+    filters.appendChild(btn);
+  });
+  main.appendChild(filters);
+
+  let filtered = tasks;
+  if(taskFilter==="pending") filtered = tasks.filter(t=>!t.done);
+  else if(taskFilter==="done") filtered = tasks.filter(t=>t.done);
+  else if(["personal","official","business"].includes(taskFilter)) filtered = tasks.filter(t=>t.category===taskFilter);
+
+  // sort: pending first (by deadline asc, then priority), done last
+  const priorityRank = {high:0, medium:1, low:2};
+  filtered = [...filtered].sort((a,b)=>{
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    const ad = a.deadline || "9999-99-99", bd = b.deadline || "9999-99-99";
+    if(ad !== bd) return ad < bd ? -1 : 1;
+    return priorityRank[a.priority] - priorityRank[b.priority];
+  });
+
+  if(filtered.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "task-empty";
+    empty.textContent = "কোনো টাস্ক নেই";
+    main.appendChild(empty);
+  } else {
+    filtered.forEach((t, idx)=>{
+      const card = document.createElement("div");
+      card.className = "task-card" + (t.done ? " done":"");
+
+      const no = document.createElement("div");
+      no.className = "task-no";
+      no.textContent = toBn(idx+1);
+
+      const chk = document.createElement("div");
+      chk.className = "task-chk" + (t.done ? " on":"");
+      chk.onclick = ()=>{
+        if(navigator.vibrate) navigator.vibrate(12);
+        const all = loadTasks();
+        const target = all.find(x=>x.id===t.id);
+        if(target){ target.done = !target.done; saveTasks(all); renderAll(); }
+      };
+
+      const body = document.createElement("div");
+      body.className = "task-body";
+      body.innerHTML = `<div class="task-name">${t.name}</div>
+        <div class="task-meta-row">
+          <span class="task-badge badge-priority-${t.priority}">${PRIORITY_LABEL[t.priority]}</span>
+          <span class="task-badge badge-cat">${CATEGORY_LABEL[t.category]}</span>
+          ${t.deadline ? `<span class="task-badge badge-deadline">📅 ${fmtDeadline(t.deadline)}</span>` : ""}
+        </div>`;
+      body.onclick = (e)=>{
+        if(e.target.closest(".task-chk")) return;
+        openTaskForm(t.id);
+      };
+
+      const del = document.createElement("div");
+      del.className = "task-del";
+      del.textContent = "✕";
+      del.onclick = ()=>{
+        const all = loadTasks().filter(x=>x.id!==t.id);
+        saveTasks(all);
+        renderAll();
+      };
+
+      card.appendChild(no);
+      card.appendChild(chk);
+      card.appendChild(body);
+      card.appendChild(del);
+      main.appendChild(card);
+    });
+  }
+}
+
+function openTaskForm(taskId){
+  editingTaskId = taskId || null;
+  const overlay = document.getElementById("taskFormOverlay");
+  const title = document.getElementById("taskFormTitle");
+  const nameInput = document.getElementById("taskNameInput");
+  const deadlineInput = document.getElementById("taskDeadlineInput");
+  const priorityInput = document.getElementById("taskPriorityInput");
+  const categoryInput = document.getElementById("taskCategoryInput");
+
+  if(taskId){
+    const t = loadTasks().find(x=>x.id===taskId);
+    title.textContent = "টাস্ক এডিট করুন";
+    nameInput.value = t ? t.name : "";
+    deadlineInput.value = t ? (t.deadline||"") : "";
+    priorityInput.value = t ? t.priority : "medium";
+    categoryInput.value = t ? t.category : "personal";
+  } else {
+    title.textContent = "নতুন টাস্ক";
+    nameInput.value = "";
+    deadlineInput.value = "";
+    priorityInput.value = "medium";
+    categoryInput.value = "personal";
+  }
+  overlay.classList.add("show");
+  nameInput.focus();
+}
+
+document.getElementById("closeTaskForm").onclick = ()=>{
+  document.getElementById("taskFormOverlay").classList.remove("show");
+};
+document.getElementById("taskSaveBtn").onclick = ()=>{
+  const name = document.getElementById("taskNameInput").value.trim();
+  if(!name){ document.getElementById("taskNameInput").focus(); return; }
+  const deadline = document.getElementById("taskDeadlineInput").value;
+  const priority = document.getElementById("taskPriorityInput").value;
+  const category = document.getElementById("taskCategoryInput").value;
+
+  let tasks = loadTasks();
+  if(editingTaskId){
+    const t = tasks.find(x=>x.id===editingTaskId);
+    if(t){ t.name=name; t.deadline=deadline; t.priority=priority; t.category=category; }
+  } else {
+    tasks.push({ id: "t"+Date.now(), name, deadline, priority, category, done:false });
+  }
+  saveTasks(tasks);
+  document.getElementById("taskFormOverlay").classList.remove("show");
+  renderAll();
+};
+
 function renderStreak(){
   let streak = 0;
   let d = new Date();
@@ -660,6 +951,8 @@ function renderAll(){
   renderTabs();
   renderMain();
   renderRing();
+  const expandBtn = document.getElementById("expandAll");
+  if(expandBtn) expandBtn.style.display = (currentTab==="task") ? "none" : "";
 }
 
 async function goToDate(d){
@@ -676,16 +969,19 @@ document.getElementById("nextDay").onclick = ()=>{
 };
 document.getElementById("todayBtn").onclick = ()=>{ goToDate(new Date()); };
 document.getElementById("expandAll").onclick = ()=>{
+  if(currentTab === "task") return;
+  const cats = DATA[currentTab].categories;
+  const anyClosed = cats.some(c => !openCats[c.id]);
+  cats.forEach(c => openCats[c.id] = anyClosed);
+  renderMain();
+};
+
+// ---------- Dark mode ----------
 const darkBtn = document.getElementById("darkBtn");
 if(localStorage.getItem("muhasaba-dark")==="1") document.body.classList.add("dark");
 darkBtn.onclick = ()=>{
   document.body.classList.toggle("dark");
   localStorage.setItem("muhasaba-dark", document.body.classList.contains("dark") ? "1":"0");
-};
-  const cats = DATA[currentTab].categories;
-  const anyClosed = cats.some(c => !openCats[c.id]);
-  cats.forEach(c => openCats[c.id] = anyClosed);
-  renderMain();
 };
 
 // init
