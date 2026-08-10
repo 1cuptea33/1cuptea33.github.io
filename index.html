@@ -27,7 +27,7 @@
   --line:#2C3D33; --bg-deep:#0A1712; --bg-deep-2:#0E2018;
 }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0; overflow-x:hidden; width:100%; max-width:100vw;}
   body{
     background:var(--paper);
     color:var(--ink);
@@ -77,6 +77,12 @@
     font-size:11.5px; padding:5px 10px; border-radius:20px; border:1px solid var(--gold);
     color:var(--gold-soft); background:transparent; cursor:pointer;
   }
+
+  .header-toolbar{
+    display:flex; gap:8px; margin-top:10px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;
+  }
+  .header-toolbar::-webkit-scrollbar{display:none;}
+  .header-toolbar .todaybtn, .header-toolbar .report-btn{flex-shrink:0;}
 
   .ring-wrap{position:relative; width:52px; height:52px; flex-shrink:0;}
   .ring-wrap svg{transform:rotate(-90deg);}
@@ -271,6 +277,25 @@
     width:100%; padding:12px; border-radius:12px; border:none; background:var(--check);
     color:#fff; font-weight:700; font-size:14px; cursor:pointer; margin-top:4px;
   }
+
+  /* Calendar */
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-nav .cal-month-label{font-size:15px; font-weight:700; color:var(--bg-deep); font-family:'Noto Serif Bengali',serif;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-dow{text-align:center; font-size:11px; color:var(--muted); font-weight:600; padding-bottom:4px;}
+  .cal-cell{
+    aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-size:12.5px; font-weight:600; cursor:pointer; position:relative;
+  }
+  .cal-cell.empty{cursor:default;}
+  .cal-cell.today{box-shadow:0 0 0 2px var(--gold) inset;}
+  .cal-cell.level-none{background:#fff; border:1px solid var(--line); color:var(--muted-2);}
+  .cal-cell.level-low{background:#F4D9D2; color:#A13B22;}
+  .cal-cell.level-mid{background:#F6E6C4; color:#8A6511;}
+  .cal-cell.level-high{background:#D9E8DD; color:#2F6B4F;}
+  .cal-legend{display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; font-size:11px; color:var(--muted);}
+  .cal-legend span{display:inline-flex; align-items:center; gap:5px;}
+  .cal-dot{width:10px; height:10px; border-radius:3px; display:inline-block;}
 </style>
 </head>
 <body>
@@ -280,6 +305,7 @@
     <div class="crescent"></div>
     <div class="brand-text">
       <h1>মুহাসাবা</h1>
+      <p>দৈনিক আমলের হিসাব</p>
       <p id="streakText" style="margin-top:2px;"></p>
     </div>
   </div>
@@ -293,9 +319,6 @@
       </div>
       <div class="navbtn" id="nextDay">›</div>
     </div>
-    <button class="todaybtn" id="todayBtn">আজ</button>
-    <button class="report-btn" id="reportBtn">রিপোর্ট</button>
-    <button class="todaybtn" id="darkBtn">🌙</button>
     <div class="ring-wrap">
       <svg width="52" height="52">
         <circle cx="26" cy="26" r="22" stroke="rgba(255,255,255,0.15)" stroke-width="5" fill="none"/>
@@ -304,6 +327,13 @@
       </svg>
       <div class="ring-pct" id="ringPct">০%</div>
     </div>
+  </div>
+  <div class="header-toolbar">
+    <button class="todaybtn" id="todayBtn">আজ</button>
+    <button class="report-btn" id="reportBtn">রিপোর্ট</button>
+    <button class="todaybtn" id="darkBtn">🌙</button>
+    <button class="todaybtn" id="calendarBtn">📅</button>
+    <button class="todaybtn" id="reminderBtn">⏰</button>
   </div>
 </header>
 
@@ -319,6 +349,45 @@
       <div class="range-btn" data-days="90">৩ মাস</div>
     </div>
     <div id="reportContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="calendarModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>মাসিক ক্যালেন্ডার</h2>
+      <div class="modal-close" id="closeCalendar">✕</div>
+    </div>
+    <div class="cal-nav">
+      <div class="navbtn" id="calPrevMonth">‹</div>
+      <div class="cal-month-label" id="calMonthLabel">—</div>
+      <div class="navbtn" id="calNextMonth">›</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><span class="cal-dot" style="background:#D9E8DD;"></span> ভালো (৭৫%+)</span>
+      <span><span class="cal-dot" style="background:#F6E6C4;"></span> মাঝারি (৪০-৭৪%)</span>
+      <span><span class="cal-dot" style="background:#F4D9D2;"></span> কম (০-৩৯%)</span>
+      <span><span class="cal-dot" style="background:#fff;border:1px solid #E3DAC3;"></span> এন্ট্রি নেই</span>
+    </div>
+  </div>
+</div>
+
+<div class="form-overlay" id="reminderOverlay">
+  <div class="form-box">
+    <div class="modal-head">
+      <h2>দৈনিক রিমাইন্ডার</h2>
+      <div class="modal-close" id="closeReminder">✕</div>
+    </div>
+    <div class="form-group">
+      <label>প্রতিদিন কোন সময়ে মনে করিয়ে দেবে?</label>
+      <input type="time" id="reminderTimeInput" value="21:00">
+    </div>
+    <button class="form-save-btn" id="reminderSaveBtn">রিমাইন্ডার চালু করুন</button>
+    <button class="form-save-btn" id="reminderOffBtn" style="background:#B3452F; margin-top:8px;">রিমাইন্ডার বন্ধ করুন</button>
+    <p style="font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.6;">
+      ⚠️ অ্যাপটা চালু বা ব্যাকগ্রাউন্ডে খোলা থাকলে এই রিমাইন্ডার কাজ করবে। ফোন থেকে অ্যাপ সম্পূর্ণ বন্ধ (swipe করে সরানো) থাকলে নোটিফিকেশন নাও আসতে পারে — তাই দিনে অন্তত একবার অ্যাপটা খুলে রাখা ভালো।
+    </p>
   </div>
 </div>
 
@@ -561,20 +630,27 @@ const DATA = {
     ]
   }
 };
+
+
+
 const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
 function toBn(n){ return String(n).split("").map(c => /\d/.test(c) ? BN_DIGITS[c] : c).join(""); }
 const WEEKDAYS = ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
 const MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+
 function fmtDate(d){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${day}`;
 }
 function keyFor(d){ return "muhasaba:"+fmtDate(d); }
+
 let currentDate = new Date();
 let currentTab = "daily";
 let dayState = { checked:{}, note:"" };
 let openCats = {}; // category open state, persists across tab switches within session
+
 function tabOrder(){ return ["daily","alt","weekly"]; }
+
 async function loadDay(d){
   const status = document.getElementById("saveStatus");
   try{
@@ -613,10 +689,38 @@ function renderDateBar(){
   }
 }
 
+// ---------- Custom items ----------
+const CUSTOM_ITEMS_KEY = "muhasaba-custom-items";
+function loadCustomItemsData(){
+  try{ return JSON.parse(localStorage.getItem(CUSTOM_ITEMS_KEY) || "{}"); }catch(e){ return {}; }
+}
+function saveCustomItemsData(obj){ localStorage.setItem(CUSTOM_ITEMS_KEY, JSON.stringify(obj)); }
+function customKey(tabKey, catId){ return tabKey+":"+catId; }
+function getCustomItems(tabKey, catId){
+  const all = loadCustomItemsData();
+  return all[customKey(tabKey,catId)] || [];
+}
+function getCatItems(tabKey, cat){
+  return cat.items.concat(getCustomItems(tabKey, cat.id));
+}
+function addCustomItem(tabKey, catId, text){
+  const all = loadCustomItemsData();
+  const k = customKey(tabKey, catId);
+  if(!all[k]) all[k] = [];
+  all[k].push({ id: "custom_"+Date.now(), q: text, isCustom:true });
+  saveCustomItemsData(all);
+}
+function deleteCustomItem(tabKey, catId, itemId){
+  const all = loadCustomItemsData();
+  const k = customKey(tabKey, catId);
+  if(all[k]) all[k] = all[k].filter(i=>i.id!==itemId);
+  saveCustomItemsData(all);
+}
+
 function allItemsFlat(){
   let out=[];
   for(const key of tabOrder()){
-    for(const cat of DATA[key].categories) out = out.concat(cat.items);
+    for(const cat of DATA[key].categories) out = out.concat(getCatItems(key, cat));
   }
   return out;
 }
@@ -629,7 +733,7 @@ function renderRing(){
     done = tasks.filter(t=>t.done).length;
   } else {
     const cats = DATA[currentTab].categories;
-    for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+    for(const cat of cats){ for(const it of getCatItems(currentTab, cat)){ total++; if(dayState.checked[it.id]) done++; } }
   }
   const pct = total? Math.round((done/total)*100) : 0;
   const circumference = 138.2;
@@ -644,7 +748,7 @@ function renderTabs(){
   for(const key of tabOrder()){
     const cats = DATA[key].categories;
     let total=0, done=0;
-    for(const cat of cats){ for(const it of cat.items){ total++; if(dayState.checked[it.id]) done++; } }
+    for(const cat of cats){ for(const it of getCatItems(key, cat)){ total++; if(dayState.checked[it.id]) done++; } }
     const div = document.createElement("div");
     div.className = "tab" + (key===currentTab ? " active":"");
     div.innerHTML = `${DATA[key].label}<span class="badge">${toBn(done)}/${toBn(total)}</span>`;
@@ -672,8 +776,9 @@ function renderMain(){
 
   const cats = DATA[currentTab].categories;
   for(const cat of cats){
-    const total = cat.items.length;
-    const done = cat.items.filter(it=>dayState.checked[it.id]).length;
+    const items = getCatItems(currentTab, cat);
+    const total = items.length;
+    const done = items.filter(it=>dayState.checked[it.id]).length;
     const isOpen = openCats[cat.id] !== undefined ? openCats[cat.id] : (currentTab==="daily");
     openCats[cat.id] = isOpen;
 
@@ -691,7 +796,7 @@ function renderMain(){
     const inner = document.createElement("div");
     inner.className = "cat-inner";
 
-    for(const it of cat.items){
+    for(const it of items){
       const checked = !!dayState.checked[it.id];
       const row = document.createElement("div");
       row.className = "item" + (checked ? " done":"");
@@ -699,7 +804,7 @@ function renderMain(){
       const chk = document.createElement("div");
       chk.className = "chk" + (checked ? " on":"");
       chk.onclick = ()=>{
-      if(navigator.vibrate) navigator.vibrate(12);
+      try{ if(navigator.vibrate) navigator.vibrate(25); }catch(e){}
         if(dayState.checked[it.id]) delete dayState.checked[it.id];
         else dayState.checked[it.id] = true;
         scheduleSave();
@@ -732,8 +837,36 @@ function renderMain(){
 
       row.appendChild(chk);
       row.appendChild(textWrap);
+
+      if(it.isCustom){
+        const delBtn = document.createElement("div");
+        delBtn.className = "task-del";
+        delBtn.textContent = "✕";
+        delBtn.onclick = (e)=>{
+          e.stopPropagation();
+          if(confirm("এই আইটেমটা মুছে ফেলতে চান?")){
+            deleteCustomItem(currentTab, cat.id, it.id);
+            renderAll();
+          }
+        };
+        row.appendChild(delBtn);
+      }
+
       inner.appendChild(row);
     }
+
+    const addRow = document.createElement("div");
+    addRow.className = "item";
+    addRow.style.cursor = "pointer";
+    addRow.innerHTML = `<div class="item-text"><span class="detail-toggle" style="font-size:13px;">+ নতুন আইটেম যোগ করুন</span></div>`;
+    addRow.onclick = ()=>{
+      const text = prompt("নতুন আইটেমের লেখা লিখুন:");
+      if(text && text.trim()){
+        addCustomItem(currentTab, cat.id, text.trim());
+        renderAll();
+      }
+    };
+    inner.appendChild(addRow);
 
     body.appendChild(inner);
     catDiv.appendChild(body);
@@ -834,7 +967,7 @@ function renderTaskTab(main){
       const chk = document.createElement("div");
       chk.className = "task-chk" + (t.done ? " on":"");
       chk.onclick = ()=>{
-        if(navigator.vibrate) navigator.vibrate(12);
+        try{ if(navigator.vibrate) navigator.vibrate(25); }catch(e){}
         const all = loadTasks();
         const target = all.find(x=>x.id===t.id);
         if(target){ target.done = !target.done; saveTasks(all); renderAll(); }
@@ -978,8 +1111,17 @@ darkBtn.onclick = ()=>{
 };
 
 // init
+function adjustTabsPosition(){
+  const header = document.querySelector("header");
+  const tabs = document.getElementById("tabs");
+  if(header && tabs) tabs.style.top = header.offsetHeight + "px";
+}
+window.addEventListener("resize", adjustTabsPosition);
+window.addEventListener("load", adjustTabsPosition);
+
 (async ()=>{
   await goToDate(new Date());
+  adjustTabsPosition();
 })();
   function getAllStoredDays(){
   const out = [];
@@ -1013,7 +1155,7 @@ function buildReport(days){
   for(const day of all){
     for(const key of tabOrder()){
       for(const cat of DATA[key].categories){
-        for(const it of cat.items){
+        for(const it of getCatItems(key, cat)){
           catStats[cat.id].possible++;
           totalPossible++;
           if(day.checked[it.id]){
@@ -1077,6 +1219,166 @@ document.getElementById("exportBtn").onclick = ()=>{
   a.download = `muhasaba-backup-${fmtDate(new Date())}.json`;
   a.click();
   URL.revokeObjectURL(url);
+};
+
+// ---------- Calendar ----------
+let calViewDate = new Date();
+
+function dayCompletionPct(dateObj){
+  const raw = localStorage.getItem(keyFor(dateObj));
+  if(!raw) return null; // no entry
+  try{
+    const val = JSON.parse(raw);
+    const checked = val.checked || {};
+    let total=0, done=0;
+    for(const cat of DATA.daily.categories){
+      for(const it of getCatItems("daily", cat)){
+        total++;
+        if(checked[it.id]) done++;
+      }
+    }
+    if(total===0) return null;
+    return Math.round((done/total)*100);
+  }catch(e){ return null; }
+}
+
+function renderCalendar(){
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  document.getElementById("calMonthLabel").textContent = `${MONTHS[m]}, ${toBn(y)}`;
+
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  const dowLabels = ["র","সো","ম","বু","বৃ","শু","শ"];
+  dowLabels.forEach(l=>{
+    const el = document.createElement("div");
+    el.className = "cal-dow";
+    el.textContent = l;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(y, m, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = new Date();
+
+  for(let i=0;i<startOffset;i++){
+    const el = document.createElement("div");
+    el.className = "cal-cell empty";
+    grid.appendChild(el);
+  }
+
+  for(let day=1; day<=daysInMonth; day++){
+    const dObj = new Date(y, m, day);
+    const pct = dayCompletionPct(dObj);
+    let level = "none";
+    if(pct !== null){
+      if(pct >= 75) level = "high";
+      else if(pct >= 40) level = "mid";
+      else level = "low";
+    }
+    const isToday = dObj.toDateString() === today.toDateString();
+    const cell = document.createElement("div");
+    cell.className = `cal-cell level-${level}` + (isToday ? " today":"");
+    cell.textContent = toBn(day);
+    cell.onclick = ()=>{
+      goToDate(new Date(y, m, day));
+      document.getElementById("calendarModal").classList.remove("show");
+    };
+    grid.appendChild(cell);
+  }
+}
+
+document.getElementById("calendarBtn").onclick = ()=>{
+  calViewDate = new Date(currentDate);
+  renderCalendar();
+  document.getElementById("calendarModal").classList.add("show");
+};
+document.getElementById("closeCalendar").onclick = ()=>{
+  document.getElementById("calendarModal").classList.remove("show");
+};
+document.getElementById("calPrevMonth").onclick = ()=>{
+  calViewDate.setMonth(calViewDate.getMonth()-1);
+  renderCalendar();
+};
+document.getElementById("calNextMonth").onclick = ()=>{
+  calViewDate.setMonth(calViewDate.getMonth()+1);
+  renderCalendar();
+};
+
+// ---------- Daily reminder notification ----------
+const REMINDER_KEY = "muhasaba-reminder-time"; // "HH:MM" or ""
+const REMINDER_LAST_KEY = "muhasaba-reminder-last-shown"; // date string
+
+function getReminderTime(){ return localStorage.getItem(REMINDER_KEY) || ""; }
+
+async function setupReminder(time){
+  if(!("Notification" in window)) return false;
+  let perm = Notification.permission;
+  if(perm === "default"){
+    perm = await Notification.requestPermission();
+  }
+  if(perm !== "granted") return false;
+  localStorage.setItem(REMINDER_KEY, time);
+  return true;
+}
+
+function clearReminder(){
+  localStorage.removeItem(REMINDER_KEY);
+}
+
+function checkReminderTick(){
+  const time = getReminderTime();
+  if(!time) return;
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const now = new Date();
+  const nowHM = String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
+  const todayStr = fmtDate(now);
+  const lastShown = localStorage.getItem(REMINDER_LAST_KEY);
+
+  if(nowHM === time && lastShown !== todayStr){
+    const title = "মুহাসাবার সময় হয়েছে";
+    const body = "আজকের মুহাসাবা করেছেন কি?";
+    if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      navigator.serviceWorker.ready.then(reg=>{
+        if(reg && reg.showNotification){
+          reg.showNotification(title, { body, icon: "./icon-512.png" });
+        } else {
+          new Notification(title, { body });
+        }
+      }).catch(()=>{ new Notification(title, { body }); });
+    } else {
+      new Notification(title, { body });
+    }
+    localStorage.setItem(REMINDER_LAST_KEY, todayStr);
+  }
+}
+setInterval(checkReminderTick, 30000); // check every 30s while app is open
+checkReminderTick();
+
+document.getElementById("reminderBtn").onclick = ()=>{
+  const t = getReminderTime();
+  if(t) document.getElementById("reminderTimeInput").value = t;
+  document.getElementById("reminderOverlay").classList.add("show");
+};
+document.getElementById("closeReminder").onclick = ()=>{
+  document.getElementById("reminderOverlay").classList.remove("show");
+};
+document.getElementById("reminderSaveBtn").onclick = async ()=>{
+  const time = document.getElementById("reminderTimeInput").value;
+  if(!time) return;
+  const ok = await setupReminder(time);
+  if(ok){
+    alert("রিমাইন্ডার চালু হয়েছে, প্রতিদিন " + time + " এ মনে করিয়ে দেবে।");
+    document.getElementById("reminderOverlay").classList.remove("show");
+  } else {
+    alert("নোটিফিকেশনের অনুমতি দেওয়া হয়নি। ব্রাউজার/ফোনের সেটিংস থেকে অনুমতি দিন।");
+  }
+};
+document.getElementById("reminderOffBtn").onclick = ()=>{
+  clearReminder();
+  alert("রিমাইন্ডার বন্ধ করা হয়েছে।");
+  document.getElementById("reminderOverlay").classList.remove("show");
 };
 </script>
 </body>
